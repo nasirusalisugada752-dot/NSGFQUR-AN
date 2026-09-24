@@ -1,0 +1,276 @@
+name: Build NSG AL-QURAN APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '8.9'
+
+      - name: Create Android project
+        shell: bash
+        run: |
+          mkdir -p app/src/main/java/com/nsgalquran/app
+          mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/values
+
+          cat > settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+
+          rootProject.name = "NSG_AL_QURAN"
+          include(":app")
+          EOF
+
+          cat > build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application' version '8.7.3' apply false
+          }
+          EOF
+
+          cat > gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+          android.useAndroidX=true
+          EOF
+
+          cat > app/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application'
+          }
+
+          android {
+              namespace 'com.nsgalquran.app'
+              compileSdk 35
+
+              defaultConfig {
+                  applicationId 'com.nsgalquran.app'
+                  minSdk 23
+                  targetSdk 35
+                  versionCode 20
+                  versionName "2.0"
+              }
+          }
+          EOF
+
+          cat > app/src/main/AndroidManifest.xml <<'EOF'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <application
+                  android:theme="@style/AppTheme"
+                  android:label="NSG AL-QUR’AN"
+                  android:allowBackup="true"
+                  android:supportsRtl="true">
+
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true">
+
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+          cat > app/src/main/res/values/styles.xml <<'EOF'
+          <resources>
+              <style name="AppTheme"
+                  parent="android:style/Theme.Material.Light.NoActionBar">
+                  <item name="android:fontFamily">sans</item>
+                  <item name="android:colorAccent">#008577</item>
+                  <item name="android:navigationBarColor">#111111</item>
+                  <item name="android:statusBarColor">#111111</item>
+              </style>
+          </resources>
+          EOF
+
+          cat > app/src/main/res/layout/activity_main.xml <<'EOF'
+          <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="vertical"
+                  android:padding="24dp">
+
+                  <TextView
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:text="NSG AL-QUR’AN"
+                      android:textSize="30sp"
+                      android:textStyle="bold"
+                      android:gravity="center"
+                      android:layout_marginTop="30dp"/>
+
+                  <TextView
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:text="By NASIRU SALISU GADA"
+                      android:textSize="16sp"
+                      android:gravity="center"
+                      android:layout_marginBottom="30dp"/>
+
+                  <EditText
+                      android:id="@+id/username"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:hint="Username"/>
+
+                  <EditText
+                      android:id="@+id/password"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:hint="Password"
+                      android:inputType="textPassword"/>
+
+                  <Button
+                      android:id="@+id/loginButton"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:text="LOGIN"/>
+
+                  <TextView
+                      android:id="@+id/status"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:gravity="center"
+                      android:padding="15dp"/>
+
+              </LinearLayout>
+          </ScrollView>
+          EOF
+
+          cat > app/src/main/java/com/nsgalquran/app/MainActivity.java <<'EOF'
+          package com.nsgalquran.app;
+
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.graphics.Typeface;
+          import android.graphics.Color;
+          import android.view.Gravity;
+          import android.widget.*;
+
+          public class MainActivity extends Activity {
+
+              LinearLayout root;
+
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  setContentView(R.layout.activity_main);
+
+                  EditText username = findViewById(R.id.username);
+                  EditText password = findViewById(R.id.password);
+                  Button login = findViewById(R.id.loginButton);
+                  TextView status = findViewById(R.id.status);
+
+                  login.setOnClickListener(v -> {
+                      String u = username.getText().toString().trim();
+                      String p = password.getText().toString().trim();
+
+                      if (u.equalsIgnoreCase("NASIRU") && p.equals("1234")) {
+                          showHome();
+                      } else {
+                          status.setText("Incorrect login. Use NASIRU / 1234");
+                      }
+                  });
+              }
+
+              private void showHome() {
+                  root = new LinearLayout(this);
+                  root.setOrientation(LinearLayout.VERTICAL);
+                  root.setPadding(24,24,24,24);
+                  root.setBackgroundColor(Color.WHITE);
+
+                  TextView title = new TextView(this);
+                  title.setText("NSG AL-QUR’AN");
+                  title.setTextSize(30);
+                  title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+                  title.setGravity(Gravity.CENTER);
+
+                  root.addView(title);
+
+                  TextView developer = new TextView(this);
+                  developer.setText("By NASIRU SALISU GADA\\nVersion 2.0");
+                  developer.setGravity(Gravity.CENTER);
+                  developer.setTextSize(16);
+                  root.addView(developer);
+
+                  String[] menu = {
+                      "📖 Read Qur’an",
+                      "🔎 Search",
+                      "📚 Surah 1–114",
+                      "🕌 Juz 1–30",
+                      "🔖 Bookmarks",
+                      "⭐ Favorites",
+                      "📝 Notes",
+                      "🎧 Audio",
+                      "🌙 Dark Mode",
+                      "⚙ Settings"
+                  };
+
+                  for (String item : menu) {
+                      Button button = new Button(this);
+                      button.setText(item);
+                      root.addView(button);
+                  }
+
+                  TextView footer = new TextView(this);
+                  footer.setText(
+                      "\\nNSG AL-QUR’AN\\n" +
+                      "Developer: NASIRU SALISU GADA\\n" +
+                      "Package: com.nsgalquran.app"
+                  );
+                  footer.setGravity(Gravity.CENTER);
+                  footer.setPadding(0,30,0,20);
+                  root.addView(footer);
+
+                  setContentView(root);
+              }
+          }
+          EOF
+
+      - name: Build APK
+        run: gradle assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: NSG-AL-QURAN-v2.0-APK
+          path: app/build/outputs/apk/debug/*.apk
+          archive: false
